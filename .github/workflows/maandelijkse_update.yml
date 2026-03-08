@@ -68,10 +68,26 @@ jobs:
               print(f'Met bronnen: {sum(1 for m in data if m.get(\"bronnen\"))}')
           "
 
+      - name: Node.js instellen
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: nextjs/package-lock.json
+
+      - name: Data kopiëren naar Next.js public map
+        run: cp data/moties_verrijkt.json nextjs/public/data/moties.json
+
+      - name: Next.js dependencies installeren
+        run: cd nextjs && npm ci
+
+      - name: Next.js bouwen (static export)
+        run: cd nextjs && npm run build
+
       - name: Wijzigingen committen en pushen
         run: |
-          git config user.name "Stemwijzer Bot"
-          git config user.email "stemwijzer@groningen.github"
-          git add data/moties_verrijkt.json data/moties_resultaten.json index.html
-          git diff --staged --quiet || git commit -m "Update stemwijzer $(date +'%Y-%m-%d')"
+          git config user.name "Kieswijzer Bot"
+          git config user.email "kieswijzer@groningen.github"
+          git add data/ nextjs/public/data/moties.json nextjs/out/
+          git diff --staged --quiet || git commit -m "Update kieswijzer $(date +'%Y-%m-%d')"
           git push
