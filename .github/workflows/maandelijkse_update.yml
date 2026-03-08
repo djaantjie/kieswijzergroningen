@@ -1,0 +1,77 @@
+name: Maandelijkse Stemwijzer Update
+
+on:
+  # Elke 1e van de maand om 08:00 UTC
+  schedule:
+    - cron: '0 8 1 * *'
+  # Handmatig triggeren via GitHub UI
+  workflow_dispatch:
+    inputs:
+      alleen_bouw:
+        description: 'Alleen stemwijzer herbouwen (geen scrape/verrijk)'
+        type: boolean
+        default: false
+      geen_scrape:
+        description: 'Verrijk + bouw, skip scrape'
+        type: boolean
+        default: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Nodig voor git push
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 instellen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Dependencies installeren
+        run: pip install -r requirements.txt
+
+      - name: Data-map aanmaken
+        run: mkdir -p data pdfs
+
+      - name: Stemwijzer updaten
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ "${{ inputs.alleen_bouw }}" = "true" ]; then
+            echo "Modus: alleen bouwen"
+            python update.py --alleen-bouw
+          elif [ "${{ inputs.geen_scrape }}" = "true" ]; then
+            echo "Modus: verrijk + bouw (geen scrape)"
+            python update.py --geen-scrape
+          else
+            echo "Modus: volledige update"
+            python update.py
+          fi
+
+      - name: Statistieken tonen
+        run: |
+          python -c "
+          import json, os
+          pad = 'data/moties_verrijkt.json'
+          if os.path.exists(pad):
+              with open(pad) as f:
+                  data = json.load(f)
+              print(f'Totaal moties: {len(data)}')
+              print(f'Met uitleg: {sum(1 for m in data if m.get(\"uitleg\"))}')
+              print(f'Met categorie: {sum(1 for m in data if m.get(\"categorie\"))}')
+              print(f'Met voor/nadelen: {sum(1 for m in data if m.get(\"voordelen\"))}')
+              print(f'Met bronnen: {sum(1 for m in data if m.get(\"bronnen\"))}')
+          "
+
+      - name: Wijzigingen committen en pushen
+        run: |
+          git config user.name "Stemwijzer Bot"
+          git config user.email "stemwijzer@groningen.github"
+          git add data/moties_verrijkt.json data/moties_resultaten.json index.html
+          git diff --staged --quiet || git commit -m "Update stemwijzer $(date +'%Y-%m-%d')"
+          git push

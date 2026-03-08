@@ -1,0 +1,25 @@
+# Lokale PDF-bestanden (te groot voor git, ~50MB)
+pdfs/
+
+# Environment en secrets
+.env
+*.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Lokale logs en tijdelijke bestanden
+update_log.txt
+*.tmp
+
+# Oude bestanden in root (data zit nu in data/)
+/moties_resultaten.json
+/moties_verrijkt.json
+/moties_rapport.md
+/stemwijzer.html
+
+# macOS
+.DS_Store
