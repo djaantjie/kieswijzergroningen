@@ -50,7 +50,7 @@ export const CAT_ICOON: Record<string, string> = {
 };
 
 export async function laadMoties(): Promise<Motie[]> {
-  const res = await fetch("/kieswijzergroningen/data/moties.json");
+  const res = await fetch((process.env.NODE_ENV === "production" ? "/kieswijzergroningen" : "") + "/data/moties.json");
   if (!res.ok) throw new Error("Kon moties niet laden");
   return res.json();
 }
