@@ -84,10 +84,15 @@ jobs:
       - name: Next.js bouwen (static export)
         run: cd nextjs && npm run build
 
+      - name: Build naar docs/ kopiëren (GitHub Pages)
+        run: |
+          rm -rf docs
+          cp -r nextjs/out docs
+
       - name: Wijzigingen committen en pushen
         run: |
           git config user.name "Kieswijzer Bot"
           git config user.email "kieswijzer@groningen.github"
-          git add data/ nextjs/public/data/moties.json nextjs/out/
+          git add data/ nextjs/public/data/moties.json docs/
           git diff --staged --quiet || git commit -m "Update kieswijzer $(date +'%Y-%m-%d')"
           git push
